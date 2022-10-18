@@ -1,0 +1,24 @@
+generator db {
+  provider = "go run github.com/prisma/prisma-client-go"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://root:shaoxiong123456@8.142.115.204:3306/wunder-demo"
+}
+
+model oauth_user {
+  id                  String    @id @db.VarChar(50)
+  name                String?   @default("") @db.VarChar(50)
+  nick_name           String?   @default("") @db.VarChar(50)
+  user_name           String?   @unique(map: "name_index") @default("") @db.VarChar(50)
+  encryption_password String?   @default("") @db.VarChar(250)
+  mobile              String?   @default("") @db.VarChar(11)
+  email               String?   @default("") @db.VarChar(50)
+  mate_data           String?   @db.Text
+  last_login_time     DateTime? @db.Timestamp(0)
+  status              Int?      @default(0) @db.TinyInt
+  create_time         DateTime? @default(now()) @db.Timestamp(0)
+  update_time         DateTime? @db.Timestamp(0)
+  is_del              Int?      @default(0) @db.UnsignedTinyInt
+}

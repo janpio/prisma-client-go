@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/prisma/prisma-client-go/generator/ast/dmmf"
 	"github.com/prisma/prisma-client-go/logger"
 	"github.com/prisma/prisma-client-go/runtime/types"
 )
@@ -83,4 +84,43 @@ func (e *QueryEngine) Request(ctx context.Context, method string, path string, p
 	return request(ctx, e.http, method, e.url+path, requestBody, func(req *http.Request) {
 		req.Header.Set("content-type", "application/json")
 	})
+}
+
+func (e *QueryEngine) IntrospectDMMF(ctx context.Context) (*dmmf.Document, error) {
+	startReq := time.Now()
+	body, err := e.Request(ctx, "GET", "/dmmf", nil)
+	if err != nil {
+		logger.Info.Printf("dmmf request failed:  %s", err)
+		return nil, err
+	}
+
+	logger.Debug.Printf("[timing] query engine dmmf request took %s", time.Since(startReq))
+
+	startParse := time.Now()
+
+	var response dmmf.Document
+	if err := json.Unmarshal(body, &response); err != nil {
+		logger.Info.Printf("json unmarshal: %s", err)
+
+		return nil, err
+	}
+
+	logger.Debug.Printf("[timing] request unmarshaling took %s", time.Since(startParse))
+
+	return &response, nil
+}
+
+func (e *QueryEngine) IntrospectSDL(ctx context.Context) ([]byte, error) {
+
+	startReq := time.Now()
+
+	body, err := e.Request(ctx, "GET", "/sdl", nil)
+	if err != nil {
+		logger.Info.Printf("sdl request failed:  %s", err)
+		return nil, err
+	}
+
+	logger.Debug.Printf("[timing] query engine sdl request took %s", time.Since(startReq))
+
+	return body, nil
 }
