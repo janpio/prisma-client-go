@@ -53,14 +53,17 @@ err := client.Prisma.QueryRaw("SELECT * FROM `Post` WHERE id = ? AND title = ?",
 
 #### Custom Query
 
+The Prisma client doesn't support aggregations out of the box. But you can do that via a custom query:
+
 ```go
-// note the usage of db.RawString, db.RawInt, etc.
 var res []struct{
 	PostID   db.RawString `json:"post_id"`
-	Comments db.RawInt    `json:"comments"`
+	Comments db.RawInt    `json:"n_comments"`
 }
-err := client.Prisma.QueryRaw("SELECT post_id, count(*) as comments FROM `Comment` GROUP BY post_id").Exec(ctx, &res)
+err := client.Prisma.QueryRaw("SELECT post_id, count(*) as n_comments FROM `Comment` GROUP BY post_id").Exec(ctx, &res)
 ```
+
+Note that the query uses `db.RawString` etc in the struct definition to maintain compatibility. Note also that the results are an array of structs, not a struct.
 
 #### Operations
 
@@ -109,7 +112,7 @@ To ensure compatibility with database and go types, you can use raw types.
 // note the usage of db.RawString, db.RawInt, etc.
 var res []struct{
 	ID        db.RawString  `json:"post_id"`
-	Published db.RawBoolean `json:"published"`
+	Comments  db.RawInt     `json:"comments"`
 }
 err := client.Prisma.QueryRaw(`SELECT post_id, count(*) as comments FROM "Comment" GROUP BY post_id`).Exec(ctx, &res)
 ```
