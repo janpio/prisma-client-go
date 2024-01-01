@@ -15,7 +15,7 @@ var countOutput = []builder.Output{
 
 	var {{ $name }}Output = []builder.Output{
 		{{- range $i := $model.Fields }}
-			{{- if $i.Kind.IncludeInStruct }}
+			{{- if $i.IncludeInStruct }}
 				{Name: "{{ $i.Name }}"},
 			{{- end }}
 		{{- end }}

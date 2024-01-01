@@ -1,0 +1,34 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("__REPLACE__")
+}
+
+generator db {
+  provider          = "go run github.com/steebchen/prisma-client-go"
+  output            = "."
+  disableGoBinaries = true
+  package           = "raw"
+}
+
+model User {
+  id       String @id @default(cuid()) @map("_id")
+  email    String @unique
+  username String
+  info     Info
+  infoOpt  Info?
+  list     Info[]
+  posts    Post[]
+}
+
+type Info {
+  age    Int
+  ageOpt Int
+}
+
+// unused relation to check for conflicts etc.
+model Post {
+  id      String @id @default(cuid()) @map("_id")
+  title   String
+  author  User   @relation(fields: [user_id], references: [id])
+  user_id String
+}

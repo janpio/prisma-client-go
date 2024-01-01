@@ -10,24 +10,23 @@
 	// Inner{{ $model.Name.GoCase }} holds the actual data
 	type Inner{{ $model.Name.GoCase }} struct {
 		{{ range $field := $model.Fields }}
-			{{- if not $field.Kind.IsRelation -}}
-				{{- if $field.IsRequired }}
-					{{ $field.Name.GoCase }} {{ if $field.IsList }}[]{{ end }}{{ $field.Type.Value }} {{ $field.Name.Tag $field.IsRequired }}
-				{{- else }}
-					{{ $field.Name.GoCase }} {{ if $field.IsList }}[]{{ else }}*{{ end }}{{ $field.Type.Value }} {{ $field.Name.Tag $field.IsRequired }}
-				{{- end }}
-			{{- end -}}
+			{{- if eq $field.RelationName "" -}}
+				{{ $field.Name.GoCase -}}
+				{{- if $field.IsList }}[]{{ else }}{{- if not $field.IsRequired }}*{{ end }} {{ end -}}
+				{{ $field.Type.Value }}{{ if eq $field.Kind "object" }}Type{{ end -}}
+        {{ $field.Name.Tag $field.IsRequired }}
+			{{- end }}
 		{{ end }}
 	}
 
 	// Raw{{ $model.Name.GoCase }}Model is a struct for {{ $model.Name }} when used in raw queries
 	type Raw{{ $model.Name.GoCase }}Model struct {
 		{{ range $field := $model.Fields }}
-			{{- if not $field.Kind.IsRelation -}}
+			{{- if not $field.IsRelation -}}
 				{{- if $field.IsRequired }}
-					{{ $field.Name.GoCase }} {{ if $field.IsList }}[]{{ end }}Raw{{ $field.Type.GoCase }} {{ $field.Name.Tag $field.IsRequired }}
+					{{ $field.Name.GoCase }} {{ if $field.IsList }}[]{{ end }}{{ if not $field.IsObjectType }}Raw{{ end }}{{ $field.Type.GoCase }}{{ if $field.IsObjectType }}Type{{ end }} {{ $field.Name.Tag $field.IsRequired }}
 				{{- else }}
-					{{ $field.Name.GoCase }} {{ if $field.IsList }}[]{{ else }}*{{ end }}Raw{{ $field.Type.GoCase }} {{ $field.Name.Tag $field.IsRequired }}
+					{{ $field.Name.GoCase }} {{ if $field.IsList }}[]{{ else }}*{{ end }}{{ if not $field.IsObjectType }}Raw{{ end }}{{ $field.Type.GoCase }}{{ if $field.IsObjectType }}Type{{ end }} {{ $field.Name.Tag $field.IsRequired }}
 				{{- end }}
 			{{- end -}}
 		{{ end }}
@@ -36,7 +35,7 @@
 	// Relations{{ $model.Name.GoCase }} holds the relation data separately
 	type Relations{{ $model.Name.GoCase }} struct {
 		{{ range $field := $model.Fields }}
-			{{- if $field.Kind.IsRelation }}
+			{{- if $field.IsRelation }}
 				{{ $field.Name.GoCase }} {{ if $field.IsList }}[]{{ else }}*{{ end }}{{ $field.Type.Value }}Model {{ $field.Name.Tag false }}
 			{{- end -}}
 		{{ end }}
@@ -44,27 +43,27 @@
 
 	{{/* Attach methods for nullable (non-required) fields and relations. */}}
 	{{- range $field := $model.Fields }}
-		{{- if or (not $field.IsRequired) ($field.Kind.IsRelation) }}
+		{{- if or (not $field.IsRequired) ($field.IsRelation) }}
 			func (r {{ $model.Name.GoCase }}Model) {{ $field.Name.GoCase }}() (
-				{{- if $field.IsList }}value []{{ else }}value{{ end }} {{ if and $field.Kind.IsRelation (not $field.IsList) }}*{{ end }}{{ $field.Type.Value }}{{ if $field.Kind.IsRelation }}Model{{ end -}}
-				{{- if or (not $field.Kind.IsRelation) (and (not $field.IsList) (not $field.IsRequired)) -}}
+				{{- if $field.IsList }}value []{{ else }}value{{ end }} {{ if and $field.IsRelation (not $field.IsList) }}*{{ end }}{{ $field.Type.Value }}{{ if $field.IsRelation }}Model{{ end -}}{{ if $field.IsObjectType }}Type{{ end -}}
+				{{- if or (not $field.IsRelation) (and (not $field.IsList) (not $field.IsRequired)) -}}
 					, ok bool
 				{{- end -}}
 			) {
-				if r.{{ if $field.Kind.IsRelation }}Relations{{ else }}Inner{{ end }}{{ $model.Name.GoCase }}.{{ $field.Name.GoCase }} == nil {
-					{{- if and ($field.Kind.IsRelation) ($field.IsRequired) }}
+				if r.{{ if $field.IsRelation }}Relations{{ else }}Inner{{ end }}{{ $model.Name.GoCase }}.{{ $field.Name.GoCase }} == nil {
+					{{- if and ($field.IsRelation) ($field.IsRequired) }}
 						panic("attempted to access {{ $field.Name.GoLowerCase }} but did not fetch it using the .With() syntax")
 					{{- else }}
 						return value
-						{{- if or (not $field.Kind.IsRelation) (and (not $field.IsList) (not $field.IsRequired)) -}}
+						{{- if or (not $field.IsRelation) (and (not $field.IsList) (not $field.IsRequired)) -}}
 							, false
 						{{- end -}}
 					{{- end }}
 				}
-				return {{ if and (not $field.Kind.IsRelation) (not $field.IsList) }}*{{ end }}r.
-					{{- if $field.Kind.IsRelation }}Relations{{ else }}Inner{{ end }}{{ $model.Name.GoCase }}.
+				return {{ if and (not $field.IsRelation) (not $field.IsList) }}*{{ end }}r.
+					{{- if $field.IsRelation }}Relations{{ else }}Inner{{ end }}{{ $model.Name.GoCase }}.
 					{{- $field.Name.GoCase -}}
-					{{- if or (not $field.Kind.IsRelation) (and (not $field.IsList) (not $field.IsRequired)) -}}
+					{{- if or (not $field.IsRelation) (and (not $field.IsList) (not $field.IsRequired)) -}}
 						, true
 					{{- end -}}
 			}

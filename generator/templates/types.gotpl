@@ -1,0 +1,18 @@
+{{- /*gotype:github.com/steebchen/prisma-client-go/generator.Root*/ -}}
+
+{{/* Types are for MongoDB object types */}}
+
+{{ range $type := $.DMMF.Datamodel.Types }}
+	// {{ $type.Name.GoCase }}Type
+	type {{ $type.Name.GoCase }}Type struct {
+		{{ range $field := $type.Fields }}
+			{{- if not $field.IsRelation -}}
+				{{- if $field.IsRequired }}
+					{{ $field.Name.GoCase }} {{ if $field.IsList }}[]{{ end }}{{ $field.Type.Value }} {{ $field.Name.Tag $field.IsRequired }}
+				{{- else }}
+					{{ $field.Name.GoCase }} {{ if $field.IsList }}[]{{ else }}*{{ end }}{{ $field.Type.Value }} {{ $field.Name.Tag $field.IsRequired }}
+				{{- end }}
+			{{- end -}}
+		{{ end }}
+	}
+{{ end }}

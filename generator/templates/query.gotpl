@@ -17,7 +17,7 @@
 			{{ if $field.Prisma }}
 				{{ $name = $field.Name.PrismaGoCase }}
 			{{ end }}
-			{{- if $field.Kind.IncludeInStruct -}}
+			{{- if $field.IncludeInStruct -}}
 				// {{ $name }}
 				//
 				// @{{ if $field.IsRequired }}required{{ else }}optional{{ end }}
@@ -27,7 +27,7 @@
 				{{ $name }} {{ $nsQuery }}{{ $field.Name.GoCase }}{{ $field.Type }}
 			{{ end }}
 
-			{{- if $field.Kind.IsRelation }}
+			{{- if $field.IsRelation }}
 				{{ $name }} {{ $nsQuery }}{{ $name }}Relations
 			{{ end }}
 		{{- end }}
@@ -87,7 +87,7 @@
 			{{ $setReturnStruct = (print $name "SetParam") }}
 		{{ end}}
 
-		{{ if $field.Kind.IsRelation }}
+		{{ if $field.Field.IsRelation }}
 			type {{ $nsQuery }}{{ $field.Name.GoCase }}Relations struct {}
 
 			{{ range $method := $field.RelationMethods }}
@@ -232,13 +232,13 @@
 			{{ end }}
 		{{ end }}
 
-		{{ if $field.Kind.IncludeInStruct }}
+		{{ if $field.IncludeInStruct }}
 			{{ if not $field.Prisma }}
 				// Set the {{ if $field.IsRequired }}required{{ else }}optional{{ end }} value of {{ $field.Name.GoCase }}
-				func (r {{ $struct }}) Set(value {{ if $field.IsList }}[]{{ end }}{{ $field.Type.Value }}) {{ $setReturnStruct }} {
+				func (r {{ $struct }}) Set(value {{ if $field.IsList }}[]{{ end }}{{ $field.Type.Value }}{{ if $field.Field.IsObjectType }}Type{{ end }}) {{ $setReturnStruct }} {
 					{{ if $field.IsList }}
 						if value == nil {
-							value = []{{ $field.Type.Value }}{}
+							value = []{{ $field.Type.Value }}{{ if $field.Field.IsObjectType }}Type{{ end }}{}
 						}
 					{{ end }}
 					{{/* if scalar list (only postgres) */}}
@@ -265,7 +265,7 @@
 				}
 
 				// Set the optional value of {{ $field.Name.GoCase }} dynamically
-				func (r {{ $struct }}) SetIfPresent(value *{{ if $field.IsList }}[]{{ else }}{{ end }}{{ $field.Type.Value }}) {{ $setReturnStruct }} {
+				func (r {{ $struct }}) SetIfPresent(value *{{ if $field.IsList }}[]{{ else }}{{ end }}{{ $field.Type.Value }}{{ if $field.Field.IsObjectType }}Type{{ end }}) {{ $setReturnStruct }} {
 					if value == nil {
 						return {{ $setReturnStruct }}{}
 					}
@@ -276,10 +276,10 @@
 
 			{{ if and (not $field.IsRequired) (not $field.IsList) (not $field.Prisma) }}
 				// Set the optional value of {{ $field.Name.GoCase }} dynamically
-				func (r {{ $struct }}) SetOptional(value *{{ $field.Type.Value }}) {{ $setReturnStruct }} {
+				func (r {{ $struct }}) SetOptional(value *{{ $field.Type.Value }}{{ if $field.Field.IsObjectType }}Type{{ end }}) {{ $setReturnStruct }} {
 					if value == nil {
 						{{/* nil value of type */}}
-						var v *{{ $field.Type.Value }}
+						var v *{{ $field.Type.Value }}{{ if $field.Field.IsObjectType }}Type{{ end }}
 						return {{ $setReturnStruct }}{
 							data: builder.Field{
 								Name:  "{{ $field.Name }}",
@@ -300,7 +300,7 @@
 						{{ $type = $field.Type.Value}}
 					{{ end }}
 					// {{ $method.Name }} the {{ if $field.IsRequired }}required{{ else }}optional{{ end }} value of {{ $field.Name.GoCase }}
-					func (r {{ $struct }}) {{ $method.Name }}(value {{ if $method.IsList }}[]{{ end }}{{ $type }}) {{ $setReturnStruct }} {
+					func (r {{ $struct }}) {{ $method.Name }}(value {{ if $method.IsList }}[]{{ end }}{{ $type }}{{ if $field.Field.IsObjectType }}Type{{ end }}) {{ $setReturnStruct }} {
 						return {{ $setReturnStruct }}{
 							data: builder.Field{
 								Name:   "{{ $field.Name }}",
@@ -331,7 +331,7 @@
 			{{ $returnStruct = (print $name "DefaultParam") }}
 		{{ end }}
 
-		{{ if and $field.Kind.IncludeInStruct (not $field.Prisma) }}
+		{{ if and $field.IncludeInStruct (not $field.Prisma) }}
 			{{/* Provide an `Equals` method for most types. */}}
 			{{/* Equals has a special return type for individual fields */}}
 			{{ $equalsReturnStruct := "" }}
@@ -340,10 +340,10 @@
 			{{ else }}
 				{{ $equalsReturnStruct = (print $name "WithPrisma" $field.Name.GoCase "EqualsParam") }}
 			{{ end }}
-			func (r {{ $struct }}) Equals(value {{ if $field.IsList }}[]{{ end }}{{ $field.Type.Value }}) {{ $equalsReturnStruct }} {
+			func (r {{ $struct }}) Equals(value {{ if $field.IsList }}[]{{ end }}{{ $field.Type.Value }}{{ if $field.Field.IsObjectType }}Type{{ end }}) {{ $equalsReturnStruct }} {
 				{{ if $field.IsList }}
 					if value == nil {
-						value = []{{ $field.Type.Value }}{}
+						value = []{{ $field.Type.Value }}{{ if $field.Field.IsObjectType }}Type{{ end }}{}
 					}
 				{{ end }}
 				return {{ $equalsReturnStruct }}{
@@ -359,7 +359,7 @@
 				}
 			}
 
-			func (r {{ $struct }}) EqualsIfPresent(value {{ if $field.IsList }}[]{{ else }}*{{ end }}{{ $field.Type.Value }}) {{ $equalsReturnStruct }} {
+			func (r {{ $struct }}) EqualsIfPresent(value {{ if $field.IsList }}[]{{ else }}*{{ end }}{{ $field.Type.Value }}{{ if $field.Field.IsObjectType }}Type{{ end }}) {{ $equalsReturnStruct }} {
 				if value == nil {
 					return {{ $equalsReturnStruct }}{}
 				}
@@ -367,7 +367,7 @@
 			}
 
 			{{ if and (not $field.IsRequired) (not $field.Prisma) }}
-				func (r {{ $struct }}) EqualsOptional(value *{{ $field.Type.Value }}) {{ $returnStruct }} {
+				func (r {{ $struct }}) EqualsOptional(value *{{ $field.Type.Value }}{{ if $field.Field.IsObjectType }}Type{{ end }}) {{ $returnStruct }} {
 					return {{ $returnStruct }}{
 						data: builder.Field{
 							Name:  "{{ $field.Name }}",
@@ -406,7 +406,7 @@
 				}
 			}
 
-			func (r {{ $struct }}) Cursor(cursor {{ $field.Type.Value }}) {{ $name }}CursorParam {
+			func (r {{ $struct }}) Cursor(cursor {{ $field.Type.Value }}{{ if $field.Field.IsObjectType }}Type{{ end }}) {{ $name }}CursorParam {
 				return {{ $name }}CursorParam{
 					data: builder.Field{
 						Name:  "{{ $field.Name }}",

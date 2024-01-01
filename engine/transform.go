@@ -14,6 +14,7 @@ import (
 // ->
 // ["asdf", null]
 func transformResponse(data []byte) ([]byte, error) {
+	logger.Debug.Printf("before transform: %s", data)
 	var m interface{}
 	if err := json.Unmarshal(data, &m); err != nil {
 		return nil, err
