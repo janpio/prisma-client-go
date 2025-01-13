@@ -9,7 +9,6 @@ import (
 
 func TestFindManyRelationUpdateLink(t *testing.T) {
 	test.RunSerial(t, []test.Database{test.MySQL, test.PostgreSQL, test.SQLite}, func(t *testing.T, db test.Database, ctx context.Context) {
-		t.Skip("skip until #401 is implemented")
 		client := NewClient()
 		mockDBName := test.Start(t, test.SQLite, client.Engine, []string{})
 		defer test.End(t, test.SQLite, client.Engine, mockDBName)
