@@ -67,6 +67,7 @@ func TestUpsert(t *testing.T) {
 				Post.Views.Set(0),
 				Post.ID.Set("upsert"),
 			).Update(
+				Post.ID.Set("upsert"),
 				Post.Title.Set("title"),
 				Post.Views.Increment(1),
 			).Exec(ctx)
